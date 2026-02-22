@@ -3,254 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalle</title>
+    <title>Juego del Gato y el Ratón</title>
+    <!-- Carga de Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* Forzamos colores para evitar el modo oscuro automático */
-        :root {
-            --paper-bg: #f4f1ea;
-            --card-bg: #ffffff;
-            --ink: #1c1917;
-        }
-
+        /* Estilos personalizados para el juego */
         body {
-            font-family: 'Crimson Pro', serif;
-            background-color: var(--paper-bg) !important;
-            color: var(--ink) !important;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            cursor: none; /* Oculta el cursor nativo para que solo se vea el ratón de juguete */
         }
-        
-        .paper-texture {
-            background-color: var(--card-bg) !important;
-            background-image: url("https://www.transparenttextures.com/patterns/handmade-paper.png");
-        }
-
-        /* Contenedor principal de la tarjeta */
-        .card-container {
-            width: 320px;
-            height: 400px;
+        .game-area {
             position: relative;
-            cursor: pointer;
-            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 10;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden; /* Asegura que los elementos no salgan del área visible */
+            background: #fcfcfc; /* Fondo blanco suave */
         }
-
-        /* Diseño de la "Portada" o Rectángulo inicial */
-        .card-front {
+        .chaser, .target {
             position: absolute;
-            inset: 0;
-            border: 2px solid var(--ink);
-            display: flex;
-            flex-col;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            z-index: 30;
-            transition: all 0.8s ease;
-            transform-origin: center;
+            font-size: 3rem; /* Tamaño de los emojis */
+            transition: transform 0.05s linear; /* Pequeña transición para suavizar el movimiento del ratón */
+            user-select: none;
+            pointer-events: none; /* Ignora el ratón en la interacción para que el cursor siempre se capture en el body */
         }
 
-        /* Al abrir, la portada se desvanece y escala */
-        .open .card-front {
-            opacity: 0;
-            transform: scale(1.2);
-            pointer-events: none;
+        /* Estilo para el gatito que persigue */
+        .chaser {
+            transition: none; /* La lógica de JS maneja el movimiento, no queremos CSS transition */
         }
 
-        /* Contenido Interno */
-        .card-inner {
+        /* Indicador de carga/inicio */
+        #loading-message {
             position: absolute;
-            inset: 0;
-            border: 2px solid var(--ink);
-            background: white !important;
-            opacity: 0;
-            transform: scale(0.9);
-            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 20;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 1fr 1fr;
-            padding: 4px;
-        }
-
-        .open .card-inner {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        /* Cuadrantes interactivos */
-        .quadrant {
-            border: 1px solid #e5e7eb;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 10px;
-            transition: background 0.3s;
-        }
-
-        .quadrant:hover {
-            background-color: #fcfaf2 !important;
-        }
-
-        .secret-content {
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.4s ease;
-        }
-
-        .quadrant.revealed .secret-content {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .quadrant.revealed i {
-            opacity: 0.2;
-            transform: scale(0.8);
-        }
-
-        .quadrant i {
-            transition: all 0.4s ease;
-            margin-bottom: 4px;
-            color: var(--ink);
-        }
-
-        /* Animaciones */
-        @keyframes heart-beat {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.15); }
-        }
-        .animate-beat {
-            animation: heart-beat 1.5s infinite;
-        }
-
-        @keyframes spin-slow {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .animate-spin-slow {
-            animation: spin-slow 10s linear infinite;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem;
+            color: #4f46e5;
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-100">
 
-    <!-- Fondo con Marca de Agua -->
-    <div class="absolute inset-0 opacity-5 pointer-events-none flex items-center justify-center">
-        <i data-lucide="heart" style="width: 400px; height: 400px;"></i>
-    </div>
+    <div id="gameArea" class="game-area">
+        <!-- El ratón de juguete (target) -->
+        <div id="mouse" class="target">🐭</div>
 
-    <div class="flex flex-col items-center">
-        <p id="hint" class="mb-6 text-stone-400 italic text-sm transition-opacity">Haz clic en el cuadro para abrir</p>
+        <!-- El gatito (chaser) -->
+        <div id="cat" class="chaser">🐱</div>
 
-        <div id="main-card" class="card-container" onclick="handleCardClick(event)">
-            
-            <!-- PORTADA (Rectángulo Limpio) -->
-            <div class="card-front paper-texture p-8 flex flex-col items-center justify-center text-center">
-                <i data-lucide="flower-2" class="mb-4 text-stone-800" size="48"></i>
-                <div class="h-px w-20 bg-stone-300 my-2"></div>
-                <h1 class="text-2xl font-bold tracking-[0.25em] text-stone-900 uppercase">¿HACE FALTA?</h1>
-                <p class="text-[10px] tracking-[0.3em] text-stone-500 mt-3 uppercase">Te quiero Ximena</p>
-                <div class="mt-6 flex gap-1">
-                    <div class="w-1 h-1 rounded-full bg-stone-800"></div>
-                    <div class="w-1 h-1 rounded-full bg-stone-300"></div>
-                    <div class="w-1 h-1 rounded-full bg-stone-800"></div>
-                </div>
-            </div>
-
-            <!-- INTERIOR (Revelado) -->
-            <div class="card-inner paper-texture">
-                <div class="quadrant" onclick="reveal(this, event)">
-                    <i data-lucide="navigation"></i>
-                    <div class="secret-content">
-                        <h4 class="text-[10px] font-bold uppercase border-b border-stone-800 mb-1">Prestarme tu tabla periódica</h4>
-                        <p class="text-[9px] italic text-stone-500">"JAJAJAJ, gracias a ti me dieron 3 puntos"</p>
-                    </div>
-                </div>
-                <div class="quadrant bg-stone-50/50" onclick="reveal(this, event)">
-                    <i data-lucide="wind"></i>
-                    <div class="secret-content">
-                        <h4 class="text-[10px] font-bold uppercase border-b border-stone-800 mb-1">El Viaje</h4>
-                        <p class="text-[9px] italic text-stone-500">"Gracias por esos lindos momentos que tuvimos en ese colegio tan feo"</p>
-                    </div>
-                </div>
-                <div class="quadrant bg-stone-50/50" onclick="reveal(this, event)">
-                    <i data-lucide="sparkles"></i>
-                    <div class="secret-content">
-                        <h4 class="text-[10px] font-bold uppercase border-b border-stone-800 mb-1">Los recuerdos</h4>
-                        <p class="text-[9px] italic text-stone-500">"Extraño las bromas que hacíamos, y los momentos donde solo estabamos callados"</p>
-                    </div>
-                </div>
-                <div class="quadrant" onclick="reveal(this, event)">
-                    <i data-lucide="anchor"></i>
-                    <div class="secret-content">
-                        <h4 class="text-[10px] font-bold uppercase border-b border-stone-800 mb-1">La paciencia/h4>
-                        <p class="text-[9px] italic text-stone-500">"Valoro que a pesar de mis errores hayas decidido quedarte a mi lado"</p>
-                    </div>
-                </div>
-
-                <!-- Corazón Central Decorativo -->
-                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div class="bg-white p-4 rounded-full border border-stone-800 shadow-lg flex flex-col items-center">
-                        <div class="relative">
-                            <i data-lucide="heart" class="text-red-600 animate-beat" fill="currentColor" size="32"></i>
-                            <div class="absolute -inset-2 border border-stone-100 rounded-full animate-spin-slow"></div>
-                        </div>
-                        <span class="text-[8px] font-bold uppercase mt-1">Gracias por:</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="footer" class="mt-10 opacity-0 transition-all duration-1000 transform translate-y-4 text-center">
-            <h2 class="text-xl tracking-[0.4em] font-bold text-stone-800 uppercase">Eres una parte importante de mi vida</h2>
-            <button onclick="resetCard(event)" class="mt-4 text-[10px] underline text-stone-400 hover:text-stone-800 uppercase tracking-widest">Cerrar</button>
+        <div id="loading-message" class="p-4 bg-white shadow-lg rounded-xl">
+            ¡Mueve el cursor para que el ratón huya del gato!
         </div>
     </div>
 
     <script>
-        lucide.createIcons();
+        // Variables globales para los elementos y la posición
+        const cat = document.getElementById('cat');
+        const mouse = document.getElementById('mouse');
+        const loadingMessage = document.getElementById('loading-message');
+        const gameArea = document.getElementById('gameArea');
 
-        function handleCardClick(e) {
-            const card = document.getElementById('main-card');
-            const hint = document.getElementById('hint');
-            const footer = document.getElementById('footer');
+        // Posiciones iniciales del ratón (cursor) y del gato
+        let targetX = window.innerWidth / 2;
+        let targetY = window.innerHeight / 2;
+        let catX = 50;
+        let catY = 50;
 
-            if (!card.classList.contains('open')) {
-                card.classList.add('open');
-                hint.style.opacity = '0';
-                footer.style.opacity = '1';
-                footer.style.transform = 'translateY(0)';
+        // Velocidad de la persecución (cuanto menor, más lento y suave persigue el gato)
+        const chaseSpeed = 0.05;
+
+        // Función para actualizar la posición del ratón de juguete (que sigue al cursor)
+        function updateTargetPosition(e) {
+            // Obtiene la posición del cursor en el viewport
+            targetX = e.clientX;
+            targetY = e.clientY;
+            
+            // Mueve instantáneamente el ratón de juguete a la posición del cursor
+            // Ajustamos por la mitad del tamaño del emoji (3rem * 16px/rem / 2)
+            mouse.style.transform = `translate(${targetX - 24}px, ${targetY - 24}px)`;
+
+            // Oculta el mensaje de inicio una vez que el usuario interactúa
+            if (loadingMessage) {
+                loadingMessage.classList.add('hidden');
             }
         }
 
-        function reveal(el, e) {
-            e.stopPropagation();
-            el.classList.toggle('revealed');
+        // Función de animación para el movimiento del gato
+        function animateCat() {
+            // Calcula la distancia hacia el objetivo (ratón)
+            const dx = targetX - catX;
+            const dy = targetY - catY;
+
+            // Mueve la posición actual del gato hacia el objetivo, usando la velocidad de persecución
+            catX += dx * chaseSpeed;
+            catY += dy * chaseSpeed;
+
+            // Aplica la nueva posición con una pequeña rotación para simular la dirección
+            // Calcula el ángulo de rotación (en radianes)
+            const angle = Math.atan2(dy, dx); 
+            // Convierte a grados y añade 90 grados para orientar la "cabeza" del emoji hacia adelante
+            const rotation = angle * (180 / Math.PI) + 90; 
+
+            // Aplica la transformación CSS: traslación y rotación
+            // Ajustamos por la mitad del tamaño del emoji
+            cat.style.transform = 
+                `translate(${catX - 24}px, ${catY - 24}px) rotate(${rotation}deg)`;
+
+            // Solicita la siguiente animación
+            requestAnimationFrame(animateCat);
         }
 
-        function resetCard(e) {
-            e.stopPropagation();
-            const card = document.getElementById('main-card');
-            const hint = document.getElementById('hint');
-            const footer = document.getElementById('footer');
+        // Event listener para capturar el movimiento del cursor en toda el área
+        document.addEventListener('mousemove', updateTargetPosition);
 
-            card.classList.remove('open');
-            hint.style.opacity = '1';
-            footer.style.opacity = '0';
-            footer.style.transform = 'translateY(16px)';
+        // Inicializa la animación del gato una vez que la ventana se ha cargado
+        window.onload = function() {
+            // Coloca el gato en una posición inicial aleatoria
+            catX = Math.random() * (window.innerWidth - 50);
+            catY = Math.random() * (window.innerHeight - 50);
             
-            // Resetear cuadrantes
-            document.querySelectorAll('.quadrant').forEach(q => q.classList.remove('revealed'));
-        }
+            // Inicia el bucle de animación
+            animateCat(); 
+        };
     </script>
 </body>
 </html>
